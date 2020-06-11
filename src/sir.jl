@@ -7,7 +7,7 @@ struct SIR <: Dynamics
 end
 
 # default constructor
-SEI3R() = SEI3R(0.0,0.0)
+SIR() = SIR(0.0,0.0)
 
 # change in a day
 """
@@ -23,7 +23,7 @@ function change(s::Vector{Float64},d::SIR)
     st = NamedTuple{(:S,:I,:R)}(s)
     # N = sum(s) # population size
     S = -( d.β*st.I )*st.S
-    I =  ( d.β*st.I - d.α*st.R
+    I =  ( d.β*st.I )*st.S - d.α*st.R
     R = d.α*st.R
     return [S,I,R]
 end
@@ -35,22 +35,30 @@ function initialize(I::Float64,d::SIR)
     return state
 end
 
-function nstates(d::SEI3R)
+function nstates(d::SIR)
     return 3
 end
-function stateNames(d::SEI3R)
+
+function stateNames(d::SIR)
     return ["S" "I" "R"]
 end
 
-
-function getParams(α::Float64,\beta::Float64,d::SIR)
+function getParams(α::Float64,β::Float64,d::SIR)
     return SIR(α,β)
 end
 
+"""
+estimatedStates( nt::Int64, N::Int64, I0::Float64, d::SIR)
+
+nt: time points
+N: population size
+I0: proportion infected at start
+d: SIR parameters
+"""
 function estimatedStates(nt::Int64,N::Int64,I0::Float64,d::SIR)
-    s0 = initialize(I0,d)
-    (d,ds) = evolve(N*1.0,s0,d,nt)
-    s1 = DataFrame(N.*d',[:S,:I,:R])
+    s0 = initialize(I0,d) # initial state
+    (d,ds) = evolve(N*1.0,s0,d,nt) # evolve over time
+    s1 = DataFrame(N.*d',[:S,:I,:R]) # data frame with states over time
     return s1
 end
 
